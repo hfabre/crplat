@@ -1,0 +1,13 @@
+name: crplat
+version: 0.1.0
+
+authors:
+  - Hugo Fabre <hugo.fabre@hotmail.com>
+
+targets:
+  crplat:
+    main: src/crplat.cr
+
+crystal: 0.23.0
+
+license: MIT
