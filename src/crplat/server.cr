@@ -26,7 +26,7 @@ module Crplat
 
     private def handle_new_client(socket : TCPSocket)
       @current_client_id += 1
-      client = Client.new(@current_client_id, socket)
+      client = Client.new(@current_client_id, socket, @main_channel)
       @clients << client
       @main_channel.add_user(client)
       broadcast_message(client, "joined your channel.", @main_channel)
@@ -38,10 +38,10 @@ module Crplat
           if msg.starts_with?("/")
             handle_command(client, msg)
           else
-            broadcast_message(client, msg, @main_channel)
+            broadcast_message(client, msg, client.current_channel)
           end
         else
-          broadcast_message(client, "disconnected.", @main_channel)
+          broadcast_message(client, "disconnected.", client.current_channel)
           break
         end
       end
@@ -55,12 +55,45 @@ module Crplat
       when "/nickname"
         client.nickname = array.last
         client.socket.send("Nickname changed to #{client.nickname}.\n")
-      when "/leave_channel"
+      when "/leave"
         channel_id = array.last.to_i
         channel = find_channel(channel_id)
         unless channel.nil?
           channel.remove_user(client)
           client.socket.send("Channel #{channel.name} left.\n")
+          broadcast_message(client, "left your channel\n", channel)
+        end
+      when "/join"
+        channel_id = array.last.to_i
+        channel = find_channel(channel_id)
+        unless channel.nil?
+          channel.add_user(client)
+          client.socket.send("Channel #{channel.name} joined.\n")
+          broadcast_message(client, "joined your channel\n", channel)
+        end
+      when "/select"
+        channel_id = array.last.to_i
+        channel = find_channel(channel_id)
+        unless channel.nil?
+          client.current_channel = channel
+          client.socket.send("Current channel changed to #{channel.name}\n")
+        end
+      when "/channels"
+        msg = ""
+        @channels.each { |channel| msg += "#{channel.name}-#{channel.id}\n"}
+        client.socket.send(msg)
+      when "/create"
+        unless array.last.nil?
+          @current_channel_id += 1
+          channel = Channel.new(@current_channel_id, array.last)
+          @channels << channel
+          client.socket.send("#{channel.name} created.\n")
+        end
+      when "/channel"
+        id = array[1].to_i
+        msg = array[2..-1].join(" ")
+        if channel = find_channel(id)
+          broadcast_message(client, msg, channel)
         end
       when "/help"
         msg = <<-STR
@@ -68,9 +101,12 @@ module Crplat
 
             - /help: Show this message.
             - /nickname new_nickname: Set your nickname to new_nickname.
-            - /leave_channel id: Leave channel.
-            - /join_channel id: Join channel.
-            - /channels: List all channel
+            - /leave id: Leave channel.
+            - /join id: Join channel.
+            - /channels: List all channel.
+            - /select id: Change user current channel.
+            - /create name: Create new channel.
+            - /channel id msg: Send direct message to channel without changing current channel.
         STR
 
         client.socket.send(msg)
