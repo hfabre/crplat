@@ -1,33 +1,27 @@
 module Crplat
-  class SetNicknameCommand
-    include ICommand
+  class SetNicknameCommand < Command
 
     def initialize(@server : Server, @client : Client, @new_name : String)
       @errors = {} of Symbol => String
     end
 
-    def process
-      validate_params
-
-      if valid?
-        @client.nickname = @new_name
-        @client.socket.send(message)
-      end
+    def execute_cmd
+      @client.nickname = @new_name
     end
 
     def validate_params
-      @errors[:nickname] = "#{@new_name} is too long (more than 16 characters)\n" if @new_name.size >= 16
-    end
+      if @new_name.size >= 16
+        @errors[:nickname] = "Nickname: #{@new_name} is too long (more than 16 characters)"
+      end
 
-    def valid?
       @errors.empty?
     end
 
-    def error_message
-      "Failed to change nickname.\n"
+    def error_msg
+      "#{self.class.name} failed.\n#{@errors.values.join("\n")}\n"
     end
 
-    def message
+    def success_msg
       "Nickname changed to #{@new_name}\n"
     end
   end

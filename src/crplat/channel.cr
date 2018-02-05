@@ -7,7 +7,7 @@ module Crplat
     end
 
     def add_user(user : Client)
-      @users << user unless user.nil? || @users.includes?(user)
+      @users << user unless @users.includes?(user)
     end
 
     def remove_user(user : Client)

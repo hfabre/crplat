@@ -1,5 +1,6 @@
 module Crplat
   class Server
+
     def initialize(@host : String = "localhost", @port : Int32 = 1234)
       @server = TCPServer.new(host, port)
       @current_client_id = 0
@@ -22,6 +23,10 @@ module Crplat
       to.users.each do |client|
         client.socket.send("#{from.nickname}: #{msg}\n") unless from.id == client.id
       end
+    end
+
+    def add_channel(channel : Channel)
+      @channels << channel unless @channels.includes?(channel)
     end
 
     private def handle_new_client(socket : TCPSocket)
@@ -56,70 +61,36 @@ module Crplat
         SetNicknameCommand.new(self, client, array[1..-1].join(" ")).process
       when "/leave"
         channel_id = array.last.to_i
-        channel = find_channel(channel_id)
-        unless channel.nil?
-          channel.remove_user(client)
-          client.socket.send("Channel #{channel.name} left.\n")
-          broadcast_message(client, "left your channel\n", channel)
-        end
+        LeaveCommand.new(self, client, channel_id).process
       when "/join"
         channel_id = array.last.to_i
-        channel = find_channel(channel_id)
-        unless channel.nil?
-          channel.add_user(client)
-          client.socket.send("Channel #{channel.name} joined.\n")
-          broadcast_message(client, "joined your channel\n", channel)
-        end
+        JoinCommand.new(self, client, channel_id).process
       when "/select"
         channel_id = array.last.to_i
-        channel = find_channel(channel_id)
-        unless channel.nil?
-          client.current_channel = channel
-          client.socket.send("Current channel changed to #{channel.name}\n")
-        end
+        SelectCommand.new(self, client, channel_id).process
       when "/channels"
-        msg = ""
-        @channels.each { |channel| msg += "#{channel.name}-#{channel.id}\n"}
-        client.socket.send(msg)
+        ChannelsCommand.new(self, client, @channels).process
       when "/create"
         unless array.last.nil?
           @current_channel_id += 1
-          channel = Channel.new(@current_channel_id, array.last)
-          @channels << channel
-          client.socket.send("#{channel.name} created.\n")
+          CreateCommand.new(self, client, @current_channel_id, array.last).process
         end
       when "/channel"
         id = array[1].to_i
         msg = array[2..-1].join(" ")
-        if channel = find_channel(id)
-          broadcast_message(client, msg, channel)
-        end
+        ChannelCommand.new(server, client, id, msg).process
       when "/help"
-        msg = <<-STR
-          List of available commands:
-
-            - /help: Show this message.
-            - /nickname new_nickname: Set your nickname to new_nickname.
-            - /leave id: Leave channel.
-            - /join id: Join channel.
-            - /channels: List all channel.
-            - /select id: Change user current channel.
-            - /create name: Create new channel.
-            - /channel id msg: Send direct message to channel without changing current channel.
-
-        STR
-
-        client.socket.send(msg)
+        HelpCommand.new(self, client).process
       else
         client.socket.send("Unkown command #{cmd}, type /help to see available commands.\n")
       end
     end
 
-    private def find_client(client_id : Int32)
+    def find_client(client_id : Int32) : Client | Nil
       @clients.each { |client| return client if client.id == client_id }
     end
 
-    private def find_channel(channel_id : Int32)
+    def find_channel(channel_id : Int32) : Channel | Nil
       @channels.each { |channel| return channel if channel.id == channel_id }
     end
   end
