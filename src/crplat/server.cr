@@ -53,8 +53,7 @@ module Crplat
 
       case cmd
       when "/nickname"
-        client.nickname = array.last
-        client.socket.send("Nickname changed to #{client.nickname}.\n")
+        SetNicknameCommand.new(self, client, array[1..-1].join(" ")).process
       when "/leave"
         channel_id = array.last.to_i
         channel = find_channel(channel_id)
@@ -107,6 +106,7 @@ module Crplat
             - /select id: Change user current channel.
             - /create name: Create new channel.
             - /channel id msg: Send direct message to channel without changing current channel.
+
         STR
 
         client.socket.send(msg)
