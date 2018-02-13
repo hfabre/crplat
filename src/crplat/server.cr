@@ -60,14 +60,14 @@ module Crplat
       when "/nickname"
         SetNicknameCommand.new(self, client, array[1..-1].join(" ")).process
       when "/leave"
-        channel_id = array.last.to_i
-        LeaveCommand.new(self, client, channel_id).process
+        channel = find_channel(array.last.to_i)
+        LeaveCommand.new(self, client, channel).process unless channel.nil?
       when "/join"
-        channel_id = array.last.to_i
-        JoinCommand.new(self, client, channel_id).process
+        channel = find_channel(array.last.to_i)
+        JoinCommand.new(self, client, channel).process unless channel.nil?
       when "/select"
-        channel_id = array.last.to_i
-        SelectCommand.new(self, client, channel_id).process
+        channel = find_channel(array.last.to_i)
+        SelectCommand.new(self, client, channel).process unless channel.nil?
       when "/channels"
         ChannelsCommand.new(self, client, @channels).process
       when "/create"

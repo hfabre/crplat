@@ -1,16 +1,12 @@
 module Crplat
   class ChannelCommand < Command
-    @channel : Channel | Nil
 
-    def initialize(@server : Server, @client : Client, @channel_id : Int32, @msg : String)
+    def initialize(@server : Server, @client : Client, @channel : Channel, @msg : String)
       @errors = {} of Symbol => String
     end
 
     def execute_cmd
-      # TODO: Open an issue, i don't think compiler should act like this
-      unless @channel.nil?
-        @server.broadcast_message(@client, @msg, @channel)
-      end
+      @server.broadcast_message(@client, @msg, @channel)
     end
 
     def validate_params

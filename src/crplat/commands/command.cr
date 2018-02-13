@@ -13,9 +13,9 @@ module Crplat
     def process
       if valid?
         execute_cmd
-        @client.socket.send(success_msg)
+        @client.socket.send(success_msg) unless success_msg.nil?
       else
-        @client.socket.send(error_msg)
+        @client.socket.send(error_msg) unless success_msg.nil?
       end
     end
   end

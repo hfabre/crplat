@@ -19,6 +19,7 @@ module Crplat
     def success_msg
         msg = ""
         @channels.each { |channel| msg += "#{channel.name}-#{channel.id}\n"}
+        msg
     end
   end
 end

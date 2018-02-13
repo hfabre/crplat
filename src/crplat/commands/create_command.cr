@@ -7,7 +7,9 @@ module Crplat
 
     def execute_cmd
       @channel = Channel.new(@channel_id, @channel_name)
-      @server.add_channel(channel)
+      if channel = @channel
+        @server.add_channel(channel)
+      end
     end
 
     def validate_params
@@ -19,7 +21,9 @@ module Crplat
     end
 
     def success_msg
-      "#{channel.name} created.\n"
+      if channel = @channel
+        "#{channel.name} created.\n"
+      end
     end
   end
 end
