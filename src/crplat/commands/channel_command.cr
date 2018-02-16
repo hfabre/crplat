@@ -10,12 +10,7 @@ module Crplat
     end
 
     def validate_params
-      @channel = @server.find_channel(@channel_id)
-      if @channel.nil?
-        @errors[:channel] = "Channel: not found"
-      end
-
-      @errors.empty?
+      true
     end
 
     def error_msg

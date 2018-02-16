@@ -56,33 +56,37 @@ module Crplat
       array = msg.split(" ")
       cmd = array.first
 
-      case cmd
-      when "/nickname"
-        SetNicknameCommand.new(self, client, array[1..-1].join(" ")).process
-      when "/leave"
-        channel = find_channel(array.last.to_i)
-        LeaveCommand.new(self, client, channel).process unless channel.nil?
-      when "/join"
-        channel = find_channel(array.last.to_i)
-        JoinCommand.new(self, client, channel).process unless channel.nil?
-      when "/select"
-        channel = find_channel(array.last.to_i)
-        SelectCommand.new(self, client, channel).process unless channel.nil?
-      when "/channels"
-        ChannelsCommand.new(self, client, @channels).process
-      when "/create"
-        unless array.last.nil?
-          @current_channel_id += 1
-          CreateCommand.new(self, client, @current_channel_id, array.last).process
+      begin
+        case cmd
+        when "/nickname"
+          SetNicknameCommand.new(self, client, array[1..-1].join(" ")).process
+        when "/leave"
+          channel = find_channel(array.last.to_i)
+          LeaveCommand.new(self, client, channel).process unless channel.nil?
+        when "/join"
+          channel = find_channel(array.last.to_i)
+          JoinCommand.new(self, client, channel).process unless channel.nil?
+        when "/select"
+          channel = find_channel(array.last.to_i)
+          SelectCommand.new(self, client, channel).process unless channel.nil?
+        when "/channels"
+          ChannelsCommand.new(self, client, @channels).process
+        when "/create"
+          unless array.last.nil?
+            @current_channel_id += 1
+            CreateCommand.new(self, client, @current_channel_id, array.last).process
+          end
+        when "/channel"
+          channel = find_channel(array[1].to_i)
+          msg = array[2..-1].join(" ")
+          ChannelCommand.new(self, client, channel, msg).process unless channel.nil?
+        when "/help"
+          HelpCommand.new(self, client).process
+        else
+          client.socket.send("Unkown command #{cmd}, type /help to see available commands.\n")
         end
-      when "/channel"
-        id = array[1].to_i
-        msg = array[2..-1].join(" ")
-        ChannelCommand.new(server, client, id, msg).process
-      when "/help"
-        HelpCommand.new(self, client).process
-      else
-        client.socket.send("Unkown command #{cmd}, type /help to see available commands.\n")
+      rescue e : ArgumentError
+        client.socket.send("Invalid argument: #{e.message}\n")
       end
     end
 
